@@ -16,9 +16,8 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Detectar estructura y Generar Gradle
+      - name: Detectar estructura y Generar Gradle Completo
         run: |
-          # Buscar la carpeta real que contiene el codigo de Android
           MODULE_DIR=$(dirname $(find . -name "AndroidManifest.xml" | head -n 1) | sed 's|\./||' | cut -d'/' -f1)
           if [ -z "$MODULE_DIR" ] || [ "$MODULE_DIR" = "." ]; then
             MODULE_DIR="."
@@ -26,13 +25,29 @@ jobs:
           echo "Modulo detectado: $MODULE_DIR"
           echo "MODULE_NAME=$MODULE_DIR" >> $GITHUB_ENV
           
-          # Crear configuracion base dinamica
-          if [ "$MODULE_DIR" = "." ]; then
-            echo "plugins { id 'com.android.application' version '8.2.0' }" > build.gradle
-            echo "" > settings.gradle
-          else
-            echo "include ':$MODULE_DIR'" > settings.gradle
+          # Crear settings.gradle con repositorios de plugins obligatorios
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+          
+          if [ "$MODULE_DIR" != "." ]; then
+            echo "include ':$MODULE_DIR'" >> settings.gradle
             echo "plugins { id 'com.android.application' version '8.2.0' apply false }" > build.gradle
+          else
+            echo "plugins { id 'com.android.application' version '8.2.0' }" > build.gradle
           fi
 
       - name: Instalar Gradle manualmente
