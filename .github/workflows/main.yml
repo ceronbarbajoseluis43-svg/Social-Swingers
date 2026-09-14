@@ -16,17 +16,26 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Reconstruir configuracion de Gradle faltante
+        run: |
+          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
+            echo "include ':app'" > settings.gradle
+          fi
+          if [ ! -f "build.gradle" ] && [ ! -f "build.gradle.kts" ]; then
+            echo "plugins { id 'com.android.application' version '8.2.0' apply false }" > build.gradle
+          fi
+
       - name: Instalar Gradle manualmente
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Generar archivos Gradle faltantes
+      - name: Generar Wrapper
         run: gradle wrapper
 
-      - name: Dar permisos de ejecucion a Gradle
+      - name: Dar permisos de ejecucion
         run: chmod +x gradlew
 
       - name: Compilar APK de Depuracion (Debug)
-        run: ./gradlew assembleDebug
+        run: ./gradlew :app:assembleDebug
 
       - name: Guardar y empaquetar archivo APK
         uses: actions/upload-artifact@v4
