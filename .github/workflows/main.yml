@@ -16,12 +16,22 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Reconstruir configuracion de Gradle faltante
+      - name: Detectar estructura y Generar Gradle
         run: |
-          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
-            echo "include ':app'" > settings.gradle
+          # Buscar la carpeta real que contiene el codigo de Android
+          MODULE_DIR=$(dirname $(find . -name "AndroidManifest.xml" | head -n 1) | sed 's|\./||' | cut -d'/' -f1)
+          if [ -z "$MODULE_DIR" ] || [ "$MODULE_DIR" = "." ]; then
+            MODULE_DIR="."
           fi
-          if [ ! -f "build.gradle" ] && [ ! -f "build.gradle.kts" ]; then
+          echo "Modulo detectado: $MODULE_DIR"
+          echo "MODULE_NAME=$MODULE_DIR" >> $GITHUB_ENV
+          
+          # Crear configuracion base dinamica
+          if [ "$MODULE_DIR" = "." ]; then
+            echo "plugins { id 'com.android.application' version '8.2.0' }" > build.gradle
+            echo "" > settings.gradle
+          else
+            echo "include ':$MODULE_DIR'" > settings.gradle
             echo "plugins { id 'com.android.application' version '8.2.0' apply false }" > build.gradle
           fi
 
@@ -34,13 +44,18 @@ jobs:
       - name: Dar permisos de ejecucion
         run: chmod +x gradlew
 
-      - name: Compilar APK de Depuracion (Debug)
-        run: ./gradlew :app:assembleDebug
+      - name: Compilar APK Dinamico
+        run: |
+          if [ "$MODULE_NAME" = "." ]; then
+            ./gradlew assembleDebug
+          else
+            ./gradlew :$MODULE_NAME:assembleDebug
+          fi
 
       - name: Guardar y empaquetar archivo APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
 
 
