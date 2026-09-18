@@ -1,0 +1,19 @@
+# Carpetas de compilación y Gradle
+.gradle/
+build/
+app/build/
+.cxx/
+local.properties
+
+# Archivos temporales de Termux y pruebas locales
+test_build.jar
+SocialSwingers_Procesado.jar
+libs_compiler/
+gradle.properties
+
+# Archivos de configuración de IDEs
+.idea/
+*.iml
+
+# Archivo de Firebase (¡No lo subas si tu repositorio es público!)
+# app/google-services.json
